@@ -59,7 +59,7 @@ Java_com_top_topffmpeg_MainActivity_stringFromJNI(
     while (av_read_frame(pContext, avPacket) >= 0) {
         avcodec_decode_video2(pCodecContext, pFrame, &got_frame, avPacket);
     }
-    
+
 
     env->ReleaseStringUTFChars(path, sPath);
 
