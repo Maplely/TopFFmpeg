@@ -1,5 +1,7 @@
 #include <jni.h>
 #include "android/log.h"
+#include "pthread.h"
+#include "unistd.h"
 
 extern "C" {
 #include "libavformat/avformat.h"
@@ -7,6 +9,16 @@ extern "C" {
 
 #define LOG_TAG "TTT"
 #define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,##__VA_ARGS__)
+
+
+jobject pJobject;
+jmethodID pID;
+JavaVM *mVm;
+JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+    mVm = vm;
+    LOGE("jni onload");
+    return JNI_VERSION_1_4;
+}
 
 extern "C" JNIEXPORT void
 JNICALL
@@ -63,5 +75,48 @@ Java_com_top_topffmpeg_MainActivity_stringFromJNI(
 
     env->ReleaseStringUTFChars(path, sPath);
 
+
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_top_topffmpeg_PosixThread_posix_1init(JNIEnv *env, jclass type) {
+    jclass pJclass = env->FindClass("com/top/topffmpeg/UUIDUtils");
+    //create global refrence
+    pJobject = env->NewGlobalRef(pJclass);
+    pID = env->GetStaticMethodID((jclass) pJobject, "generatUUid", "()Ljava/lang/String;");
+
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_top_topffmpeg_PosixThread_posix_1destroy(JNIEnv *env, jclass type) {
+    env->DeleteGlobalRef(pJobject);
+}
+
+void *th_fun(void *arg) {
+    for (int i = 0; i < 5; ++i) {
+        JNIEnv *env;
+        mVm->AttachCurrentThread(&env, NULL);
+        jobject uuid = env->CallStaticObjectMethod((jclass) pJobject, pID);
+        const char *string = env->GetStringUTFChars(static_cast<jstring>(uuid), 0);
+        LOGE("<jni>得到的uuid为:%s", string);
+        if (i == 4) {
+            goto end;
+        }
+        sleep(1);
+    }
+    end:
+    mVm->DetachCurrentThread();
+    pthread_exit(0);
+    LOGE("posix退出");
+}
+JNIEXPORT void JNI_OnUnload(JavaVM* vm, void* reserved){
+    LOGE("jni退出");
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_top_topffmpeg_PosixThread_posix_1getuuid(JNIEnv *env, jclass type) {
+    pthread_t tid;
+    pthread_create(&tid,NULL,th_fun,NULL);
 
 }

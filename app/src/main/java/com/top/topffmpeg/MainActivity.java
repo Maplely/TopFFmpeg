@@ -38,13 +38,26 @@ public class MainActivity extends AppCompatActivity {
         requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},10);
         Button tv = (Button) findViewById(R.id.sample_text);
         Log.e(TAG, "path:" + videoPath);
+        PosixThread.posix_init();
         tv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 stringFromJNI(videoPath);
             }
         });
+        findViewById(R.id.sample_thread).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+             PosixThread.posix_getuuid();
+            }
+        });
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        PosixThread.posix_destroy();
     }
 
     /**
