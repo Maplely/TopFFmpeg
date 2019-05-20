@@ -81,7 +81,6 @@ Java_com_top_topffmpeg_SecondActivity_playVideo(
 
     //6读取数据
     while (av_read_frame(pContext, packet)>=0) {
-        LOGE("可以解析");
         //解码AVPacket->AVFrame
         len = avcodec_decode_video2(pCodecContext, yuv_frame, &got_frame, packet);
         if (got_frame) {
@@ -110,6 +109,7 @@ Java_com_top_topffmpeg_SecondActivity_playVideo(
 
 
 }
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_top_topffmpeg_PosixThread_posix_1init(JNIEnv *env, jclass type) {
