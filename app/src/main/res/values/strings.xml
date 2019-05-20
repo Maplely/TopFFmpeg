@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">TopFFmpeg</string>
+    <string name="second_start">开始播放</string>
 </resources>

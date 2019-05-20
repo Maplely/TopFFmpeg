@@ -2,6 +2,9 @@
 #include "android/log.h"
 #include "pthread.h"
 #include "unistd.h"
+#include <android/native_window.h>
+#include <android/native_window_jni.h>
+#include "libyuv/convert_argb.h"
 
 extern "C" {
 #include "libavformat/avformat.h"
@@ -14,6 +17,7 @@ extern "C" {
 jobject pJobject;
 jmethodID pID;
 JavaVM *mVm;
+
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     mVm = vm;
     LOGE("jni onload");
@@ -22,10 +26,11 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 
 extern "C" JNIEXPORT void
 JNICALL
-Java_com_top_topffmpeg_MainActivity_stringFromJNI(
+Java_com_top_topffmpeg_SecondActivity_playVideo(
         JNIEnv *env,
         jobject /* this */,
-        jstring path) {
+        jstring path,
+        jobject surface) {
 
     const char *sPath = env->GetStringUTFChars(path, 0);
     //1.注册
@@ -61,18 +66,46 @@ Java_com_top_topffmpeg_MainActivity_stringFromJNI(
         LOGE("%s", "解码器无法打开");
         return;
     }
+    LOGE("开始解析播放");
     //6一帧一帧读取压缩数据avpacket
-    AVPacket *avPacket;
-    av_init_packet(avPacket);
+    AVPacket *packet = (AVPacket *) av_malloc(sizeof(AVPacket));
     //像素数据
-    AVFrame *pFrame;
-    pFrame = av_frame_alloc();
-    int got_frame;
-    while (av_read_frame(pContext, avPacket) >= 0) {
-        avcodec_decode_video2(pCodecContext, pFrame, &got_frame, avPacket);
+    AVFrame *yuv_frame = av_frame_alloc();
+    AVFrame *rgb_frame = av_frame_alloc();
+
+    //nativehuizhi
+    ANativeWindow *nativeWindow = ANativeWindow_fromSurface(env, surface);
+    ANativeWindow_Buffer outBuffer;
+
+    int len, got_frame, framecount = 0;
+
+    //6读取数据
+    while (av_read_frame(pContext, packet)>=0) {
+        LOGE("可以解析");
+        //解码AVPacket->AVFrame
+        len = avcodec_decode_video2(pCodecContext, yuv_frame, &got_frame, packet);
+        if (got_frame) {
+            LOGE("解码%d帧", framecount++);
+
+            ANativeWindow_setBuffersGeometry(nativeWindow, pCodecContext->width,
+                                             pCodecContext->height, WINDOW_FORMAT_RGBA_8888);
+            ANativeWindow_lock(nativeWindow, &outBuffer, NULL);
+            avpicture_fill((AVPicture *) rgb_frame, (uint8_t *) outBuffer.bits, AV_PIX_FMT_RGBA,
+                           pCodecContext->width, pCodecContext->height);
+            libyuv::I420ToARGB(yuv_frame->data[0], yuv_frame->linesize[0],
+                               yuv_frame->data[2], yuv_frame->linesize[2],
+                               yuv_frame->data[1], yuv_frame->linesize[1],
+                               rgb_frame->data[0], rgb_frame->linesize[0],
+                               pCodecContext->width, pCodecContext->height);
+            ANativeWindow_unlockAndPost(nativeWindow);
+            usleep(1000 * 16);
+        }
+        av_free_packet(packet);
     }
-
-
+    ANativeWindow_release(nativeWindow);
+    av_frame_free(&yuv_frame);
+    avcodec_close(pCodecContext);
+    avformat_free_context(pContext);
     env->ReleaseStringUTFChars(path, sPath);
 
 
@@ -109,7 +142,8 @@ void *th_fun(void *arg) {
     pthread_exit(0);
     LOGE("posix退出");
 }
-JNIEXPORT void JNI_OnUnload(JavaVM* vm, void* reserved){
+
+JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *reserved) {
     LOGE("jni退出");
 }
 
@@ -117,6 +151,6 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_top_topffmpeg_PosixThread_posix_1getuuid(JNIEnv *env, jclass type) {
     pthread_t tid;
-    pthread_create(&tid,NULL,th_fun,NULL);
+    pthread_create(&tid, NULL, th_fun, NULL);
 
 }
