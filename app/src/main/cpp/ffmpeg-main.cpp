@@ -5,8 +5,9 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 #include "libyuv/convert_argb.h"
-
+#ifdef __cplusplus
 extern "C" {
+#endif
 #include "libavformat/avformat.h"
 
 #define LOG_TAG "TTT"
@@ -153,4 +154,6 @@ Java_com_top_topffmpeg_PosixThread_posix_1getuuid(JNIEnv *env, jclass type) {
     pthread_create(&tid, NULL, th_fun, NULL);
 
 }
+#ifdef __cplusplus
 }
+#endif
