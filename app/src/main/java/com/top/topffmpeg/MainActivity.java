@@ -38,6 +38,12 @@ public class MainActivity extends AppCompatActivity {
                 PosixThread.posix_getuuid();
             }
         });
+        findViewById(R.id.media_play).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this,ThirdActivity.class));
+            }
+        });
         PosixThread.posix_init();
 
     }
