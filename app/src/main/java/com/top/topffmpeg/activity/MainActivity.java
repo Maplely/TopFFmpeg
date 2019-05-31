@@ -1,4 +1,4 @@
-package com.top.topffmpeg;
+package com.top.topffmpeg.activity;
 
 import android.Manifest;
 import android.content.Intent;
@@ -8,6 +8,8 @@ import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import com.top.topffmpeg.nativ.PosixThread;
+import com.top.topffmpeg.R;
 
 public class MainActivity extends AppCompatActivity {
 

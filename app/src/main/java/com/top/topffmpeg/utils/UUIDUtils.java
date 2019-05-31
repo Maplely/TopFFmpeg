@@ -1,4 +1,4 @@
-package com.top.topffmpeg;
+package com.top.topffmpeg.utils;
 
 import java.util.UUID;
 

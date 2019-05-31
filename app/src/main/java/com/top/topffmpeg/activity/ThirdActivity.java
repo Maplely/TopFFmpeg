@@ -1,4 +1,4 @@
-package com.top.topffmpeg;
+package com.top.topffmpeg.activity;
 
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 
+import com.top.topffmpeg.R;
 import java.io.IOException;
 
 /**

@@ -1,4 +1,4 @@
-package com.top.topffmpeg;
+package com.top.topffmpeg.activity;
 
 import android.app.Activity;
 import android.graphics.PixelFormat;
@@ -10,6 +10,7 @@ import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.View;
 
+import com.top.topffmpeg.R;
 import java.io.File;
 
 /**
