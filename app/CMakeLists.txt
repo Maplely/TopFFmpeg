@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-add_library(ffmpeg-main SHARED src/main/cpp/ffmpeg-main.cpp)
+add_library(ffmpeg-main SHARED src/main/cpp/main.cpp src/main/cpp/common.h src/main/cpp/sound_paly.cpp)
 
 target_include_directories(ffmpeg-main PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include) #头文件
 
