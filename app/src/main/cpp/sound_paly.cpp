@@ -2,7 +2,7 @@
 // Created by top on 2019/6/20.
 //
 #include "common.h"
-#define  MAX_AUDIO_FRME_SIZE 48000 * 4
+
 
 JNIEXPORT void JNICALL
 Java_com_top_topffmpeg_activity_MainActivity_palySound(JNIEnv *env, jobject instance, jstring path_, jobject track) {
@@ -46,7 +46,7 @@ Java_com_top_topffmpeg_activity_MainActivity_palySound(JNIEnv *env, jobject inst
 
     AVSampleFormat in_format = codecContext->sample_fmt;
     AVSampleFormat out_sampleFormat = AV_SAMPLE_FMT_S16;
-    uint8_t *out_buffer= static_cast<uint8_t *>(av_malloc(MAX_AUDIO_FRME_SIZE));
+    uint8_t *out_buffer = static_cast<uint8_t *>(av_malloc(MAX_AUDIO_FRME_SIZE));
     int in_rate = codecContext->sample_rate;
     int out_rate = in_rate;
     //~~~~~~~~~结束
@@ -56,36 +56,38 @@ Java_com_top_topffmpeg_activity_MainActivity_palySound(JNIEnv *env, jobject inst
     swr_init(swrAlloc);
 
     int channels = av_get_channel_layout_nb_channels(out_ch_layout);
-    int got_frame, index, res;
+    int got_frame, index = 0, res;
     //~~~~~~~~jni start
 
     jclass audioTrackClass = env->GetObjectClass(track);
-    jmethodID trackMethodId = env->GetMethodID(audioTrackClass, "write()", "([BII)I");
-
-    
+    jmethodID trackMethodId = env->GetMethodID(audioTrackClass, "write", "([BII)I");
+    jmethodID playMehodId = env->GetMethodID(audioTrackClass, "play", "()V");
+    env->CallVoidMethod(track,playMehodId);
     //~~~~~~~~jni end
-    
+
     while (av_read_frame(fContext, pPacket) >= 0) {
         //解码音频类型
         if (pPacket->stream_index == audioInex) {
-          res=  avcodec_decode_audio4(codecContext,pFrame,&got_frame,pPacket);            
-            if(res<0){
+            res = avcodec_decode_audio4(codecContext, pFrame, &got_frame, pPacket);
+            if (res < 0) {
                 LOGE_TTT("解码完成");
             }
-            if(got_frame>0){
-                LOGE_TTT("解码%d帧",got_frame);
-            swr_convert(swrAlloc, &out_buffer,MAX_AUDIO_FRME_SIZE,(const uint8_t **) pFrame->data, pFrame->nb_samples);
-            int out_buffer_size=av_samples_get_buffer_size(NULL,channels,pFrame->nb_samples,out_sampleFormat,1);
+            if (got_frame > 0) {
+                LOGE_TTT("音频解码%d帧", index++);
+                swr_convert(swrAlloc, &out_buffer, MAX_AUDIO_FRME_SIZE, (const uint8_t **) pFrame->data,
+                            pFrame->nb_samples);
+                int out_buffer_size = av_samples_get_buffer_size(NULL, channels, pFrame->nb_samples, out_sampleFormat,
+                                                                 1);
 
-            jbyteArray sample_array = env->NewByteArray(out_buffer_size);
-            jbyte *bytes = env->GetByteArrayElements(sample_array, 0);
-            memcpy(bytes,out_buffer,out_buffer_size);
-            env->ReleaseByteArrayElements(sample_array,bytes,0);
+                jbyteArray sample_array = env->NewByteArray(out_buffer_size);
+                jbyte *bytes = env->GetByteArrayElements(sample_array, 0);
+                memcpy(bytes, out_buffer, out_buffer_size);
+                env->ReleaseByteArrayElements(sample_array, bytes, 0);
 
-            env->CallIntMethod(track,trackMethodId,bytes,0,out_buffer_size);
-            env->DeleteLocalRef(sample_array);
+                env->CallIntMethod(track, trackMethodId, sample_array, 0, out_buffer_size);
+                env->DeleteLocalRef(sample_array);
 
-            usleep(16*1000);
+                usleep(16 * 1000);
             }
 
         }
@@ -94,6 +96,7 @@ Java_com_top_topffmpeg_activity_MainActivity_palySound(JNIEnv *env, jobject inst
     av_frame_free(&pFrame);
     av_free(out_buffer);
     swr_free(&swrAlloc);
-
+    avcodec_close(codecContext);
+    avformat_close_input(&fContext);
     env->ReleaseStringUTFChars(path_, path);
 }

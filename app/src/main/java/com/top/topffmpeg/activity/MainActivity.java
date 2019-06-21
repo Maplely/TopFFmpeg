@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int channel = AudioFormat.CHANNEL_IN_STEREO;
         int minBufferSize = AudioTrack.getMinBufferSize(44100, channel, format);
         audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 44100, channel, format, minBufferSize, AudioTrack.MODE_STREAM);
-
+        audioTrack.play();
     }
 
     private void initDatas() {
